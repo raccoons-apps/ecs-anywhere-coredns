@@ -17,9 +17,9 @@ jobs:
 
     - uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: ${{ env.AWS_ROLE_ARN }}
+        role-to-assume: ${{ vars.AWS_ROLE_ARN }}
         role-session-name: github-ecs-anywhere-coredns-session
-        aws-region: ${{ env.AWS_REGION }}
+        aws-region: ${{ vars.AWS_REGION }}
 
     - name: Login to Amazon ECR
       uses: aws-actions/amazon-ecr-login@v2
@@ -28,14 +28,13 @@ jobs:
     - name: Build and push Docker image
       env:
         REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        REPOSITORY: ${{ env.AWS_ECR_REPOSITORY }}
       run: |
         BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
         BUILD_VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,' | sed -e 's/^v//')
 
         docker build \
-          --tag $REGISTRY/$REPOSITORY:$BUILD_VERSION \
-          --tag $REGISTRY/$REPOSITORY:latest \
+          --tag ${{ env.REGISTRY }}/${{ vars.AWS_ECR_REPOSITORY }}:$BUILD_VERSION \
+          --tag ${{ env.REGISTRY }}/${{ vars.AWS_ECR_REPOSITORY }}:latest \
           --label "org.opencontainers.image.created=$BUILD_DATE" \
           --label "org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}" \
           --label "org.opencontainers.image.version=$BUILD_VERSION" \
@@ -43,4 +42,4 @@ jobs:
           --label "org.opencontainers.image.title=ECS Anywhere CoreDNS" \
           --label "org.opencontainers.image.licenses=MIT" .
 
-        docker push $REGISTRY/$REPOSITORY --all-tags
+        docker push ${{ env.REGISTRY }}/${{ vars.AWS_ECR_REPOSITORY }} --all-tags
