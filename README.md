@@ -25,10 +25,10 @@ To start CoreDNS service on the Docker host, run the command:
 docker run -d --restart=unless-stopped \
   -e COREDNS_HOSTEDZONE=example.local \
   -e COREDNS_HOSTEDZONE_ID=Z0000000001 \
-  -e COREDNS_HOSTEDZONE_ACL_SUBNETS=10.0.1.0/24 \
   -e COREDNS_CLOUD_HOSTEDZONE=cloud.local \
   -e COREDNS_CLOUD_HOSTEDZONE_ID=Z0000000002 \
-  -e COREDNS_CLOUD_HOSTEDZONE_ACL_SUBNETS=10.0.2.0/24 ghcr.io/raccoons-apps/ecs-anywhere-coredns:latest
+  -e COREDNS_ACL_TRUSTED_SUBNET=10.0.1.0/24 \
+  -e COREDNS_ACL_ADDITIONAL_TRUSTED_SUBNET=10.0.2.0/24 ghcr.io/raccoons-apps/ecs-anywhere-coredns:latest
 ```
 
 ## Installation using Amazon ECS Console
@@ -54,19 +54,19 @@ a service in ECS cluster with external instances.
                     "value": "Z0000000001"
                 },
                 {
-                    "name": "COREDNS_HOSTEDZONE_ACL_SUBNETS",
-                    "value": "10.0.1.0/24"
-                },
-                {
-                    "name": "COREDNS_HOSTEDZONE",
+                    "name": "COREDNS_CLOUD_HOSTEDZONE",
                     "value": "cloud.local"
                 },
                 {
-                    "name": "COREDNS_HOSTEDZONE",
+                    "name": "COREDNS_CLOUD_HOSTEDZONE",
                     "value": "Z0000000002"
                 },
                 {
-                    "name": "COREDNS_HOSTEDZONE",
+                    "name": "COREDNS_ACL_TRUSTED_SUBNET",
+                    "value": "10.0.1.0/24"
+                },
+                {
+                    "name": "COREDNS_ACL_ADDITIONAL_TRUSTED_SUBNET",
                     "value": "10.0.2.0/24"
                 }
             ],
@@ -81,6 +81,6 @@ a service in ECS cluster with external instances.
     ],
     "networkMode": "host",
     "cpu": "512",
-    "memory": "128"
+    "memory": "256"
 }
 ```
