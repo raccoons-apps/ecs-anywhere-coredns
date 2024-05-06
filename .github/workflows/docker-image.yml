@@ -5,26 +5,37 @@ on:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     steps:
     - uses: actions/checkout@v3
 
-    - name: Log in to GitHub Container Registry
-      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+    - uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ env.AWS_ROLE_ARN }}
+        role-session-name: github-ecs-anywhere-coredns-session
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v2
+      id: login-ecr
 
     - name: Build and push Docker image
+      env:
+        REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        REPOSITORY: ${{ env.AWS_ECR_REPOSITORY }}
       run: |
         BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
         BUILD_VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,' | sed -e 's/^v//')
 
         docker build \
-          --tag ghcr.io/${{ github.repository }}:$BUILD_VERSION \
-          --tag ghcr.io/${{ github.repository }}:latest \
+          --tag $REGISTRY/$REPOSITORY:$BUILD_VERSION \
+          --tag $REGISTRY/$REPOSITORY:latest \
           --label "org.opencontainers.image.created=$BUILD_DATE" \
           --label "org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}" \
           --label "org.opencontainers.image.version=$BUILD_VERSION" \
@@ -32,4 +43,4 @@ jobs:
           --label "org.opencontainers.image.title=ECS Anywhere CoreDNS" \
           --label "org.opencontainers.image.licenses=MIT" .
 
-        docker push ghcr.io/${{ github.repository }} --all-tags
+        docker push $REGISTRY/$REPOSITORY --all-tags
