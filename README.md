@@ -33,7 +33,7 @@ docker run -d --restart=unless-stopped \
   -e COREDNS_CLOUD_HOSTEDZONE_ID=Z0000000002 \
   -e COREDNS_ACL_TRUSTED_SUBNET=10.0.1.0/24 \
   -e COREDNS_ACL_ADDITIONAL_TRUSTED_SUBNET=10.0.2.0/24 \
-  -v /etc/coredns/conf.d:/etc/coredns/conf.d:ro ghcr.io/raccoons-apps/ecs-anywhere-coredns:latest
+  -v /etc/coredns/conf.d:/etc/coredns/conf.d:ro 1234567890.dkr.ecr.eu-central-1.amazonaws.com/coredns:latest
 ```
 
 ## Installation using Amazon ECS Console
@@ -48,7 +48,7 @@ a service in ECS cluster with external instances.
     "containerDefinitions": [
         {
             "name": "container",
-            "image": "ghcr.io/raccoons-apps/ecs-anywhere-coredns:latest",
+            "image": "1234567890.dkr.ecr.eu-central-1.amazonaws.com/coredns:latest",
             "environment": [
                 {
                     "name": "COREDNS_HOSTEDZONE",
@@ -80,6 +80,11 @@ a service in ECS cluster with external instances.
                     "sourceVolume": "coredns",
                     "containerPath": "/etc/coredns/conf.d",
                     "readOnly": true
+                },
+                {
+                    "sourceVolume": "coredns-records",
+                    "containerPath": "/etc/coredns/records",
+                    "readOnly": true
                 }
             ],
             "portMappings": [
@@ -97,6 +102,12 @@ a service in ECS cluster with external instances.
             "name": "coredns",
             "host": {
                 "sourcePath": "/etc/coredns/conf.d"
+            }
+        },
+        {
+            "name": "coredns-records",
+            "host": {
+                "sourcePath": "/etc/coredns/records"
             }
         }
     ],
