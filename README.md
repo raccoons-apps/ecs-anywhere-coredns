@@ -19,7 +19,11 @@ To start CoreDNS service on the Docker host, run the command:
 > Replace the environment variable values ​​before running the command. Note
 > that the CoreDNS configuration synchronizes records with Route53 for two
 > hosted zones - one for corporate resources, the other for internal resources
-> accessible only to administrators.
+> accessible only to administrators. Also note that the docker image does not
+> contain the `/etc/coredns/conf.d` folder. Mount it with a local folder and
+> create at least an empty consul.conf file. consul.conf is intended to
+> configure forwarding of DNS requests to domains of services discovered by
+> the Consul agent.
 
 ```
 docker run -d --restart=unless-stopped \
@@ -28,7 +32,8 @@ docker run -d --restart=unless-stopped \
   -e COREDNS_CLOUD_HOSTEDZONE=cloud.local \
   -e COREDNS_CLOUD_HOSTEDZONE_ID=Z0000000002 \
   -e COREDNS_ACL_TRUSTED_SUBNET=10.0.1.0/24 \
-  -e COREDNS_ACL_ADDITIONAL_TRUSTED_SUBNET=10.0.2.0/24 ghcr.io/raccoons-apps/ecs-anywhere-coredns:latest
+  -e COREDNS_ACL_ADDITIONAL_TRUSTED_SUBNET=10.0.2.0/24 \
+  -v /etc/coredns/conf.d:/etc/coredns/conf.d:ro ghcr.io/raccoons-apps/ecs-anywhere-coredns:latest
 ```
 
 ## Installation using Amazon ECS Console
@@ -70,6 +75,13 @@ a service in ECS cluster with external instances.
                     "value": "10.0.2.0/24"
                 }
             ],
+            "mountPoints": [
+                {
+                    "sourceVolume": "coredns",
+                    "containerPath": "/etc/coredns/conf.d",
+                    "readOnly": true
+                }
+            ],
             "portMappings": [
                 {
                     "containerPort": 53,
@@ -80,6 +92,14 @@ a service in ECS cluster with external instances.
         }
     ],
     "networkMode": "host",
+    "volumes": [
+        {
+            "name": "coredns",
+            "host": {
+                "sourcePath": "/etc/coredns/conf.d"
+            }
+        }
+    ],
     "cpu": "512",
     "memory": "256"
 }
